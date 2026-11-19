@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: ghcr.io/e24qdy2/e2
-  tag: "52e7c027c3d83406fc1596c05abd199094ffac66"
+  tag: "e265b4a2eb543e4d615d5cf74f7eaf8c6e2bc134"
   pullPolicy: IfNotPresent
 app:
   name: lab-http
