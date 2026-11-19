@@ -24,7 +24,7 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         path = self.path.split("?", 1)[0]
         if path == "/healthz":
-            self.respond(200, "application/json", json.dumps({"status": "ok", "service": "e2-devsecops-demo"}))
+            self.respond(200, "application/json", json.dumps({"status": "ok", "service": "e2-devsecops-demo", "version": "2.0.0"}))
         elif path == "/":
             self.respond(200, "text/html; charset=utf-8", "<!doctype html><html lang='en'><head><meta charset='utf-8'><title>DevSecOps e2 Lab</title></head><body><h1>DevSecOps e2 Lab</h1><p>Public demonstration app for CI, SAST, DAST and container security.</p></body></html>")
         else:
