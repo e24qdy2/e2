@@ -1,0 +1,11 @@
+﻿__pycache__/
+*.pyc
+*.log
+.env
+.env.*
+*.json
+*.key
+*.pem
+kubeconfig*
+reports/
+.secrets/
