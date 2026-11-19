@@ -1,0 +1,5 @@
+apiVersion: v2
+name: e2-demo
+version: 0.1.0
+appVersion: "1.0"
+description: Reusable personal DevSecOps learning chart - no cloud configuration

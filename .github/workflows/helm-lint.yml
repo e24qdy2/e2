@@ -1,0 +1,26 @@
+name: Helm Chart Validation
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'helm/**'
+      - '.github/workflows/helm-lint.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'helm/**'
+      - '.github/workflows/helm-lint.yml'
+permissions:
+  contents: read
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.2
+      - name: Helm lint
+        run: helm lint helm/e2-demo
+      - name: Template demo
+        run: helm template e2-demo helm/e2-demo --namespace default > rendered.yaml
