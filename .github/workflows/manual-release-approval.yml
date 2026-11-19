@@ -1,0 +1,50 @@
+name: Lab 16 - Manual Release Approval
+on:
+  workflow_dispatch:
+    inputs:
+      image_sha:
+        description: Immutable GHCR image commit SHA (40 hex characters)
+        required: true
+        type: string
+        default: e265b4a2eb543e4d615d5cf74f7eaf8c6e2bc134
+
+permissions:
+  contents: read
+  actions: read
+  packages: read
+
+jobs:
+  verify-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: lab-release-approval
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate image SHA and successful security workflows
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_SHA: ${{ inputs.image_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_SHA" =~ ^[a-f0-9]{40}$ ]] || { echo "Invalid SHA format"; exit 1; }
+          gh api "repos/${GITHUB_REPOSITORY}/actions/runs" -f head_sha="$RELEASE_SHA" -f per_page=100 --method GET > /tmp/release-runs.json
+          for workflow in "CI DevSecOps Starter" "CodeQL Advanced" "Container Build, Trivy Gate and GHCR"; do
+            jq -e --arg name "$workflow" '.workflow_runs | any(.[]; .name == $name and .head_sha == env.RELEASE_SHA and .conclusion == "success")' /tmp/release-runs.json >/dev/null || { echo "Missing successful run: $workflow"; exit 1; }
+          done
+          echo "All required security workflows passed for $RELEASE_SHA"
+      - uses: azure/setup-helm@v4
+        with:
+          version: v4.3.2
+      - name: Verify Helm manifest references approved immutable image
+        env:
+          RELEASE_SHA: ${{ inputs.image_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          helm lint helm/e2-demo
+          helm template e2-demo helm/e2-demo --namespace default --set image.tag="$RELEASE_SHA" > /tmp/rendered.yaml
+          grep -Fq "ghcr.io/e24qdy2/e2:$RELEASE_SHA" /tmp/rendered.yaml
+          echo "## Promotion check complete" >> "$GITHUB_STEP_SUMMARY"
+          echo "Approved candidate: `$RELEASE_SHA`" >> "$GITHUB_STEP_SUMMARY"
+          echo "No Kubernetes deploy or registry publication was performed." >> "$GITHUB_STEP_SUMMARY"
