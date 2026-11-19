@@ -1,0 +1,56 @@
+name: Container Build, Trivy Gate and GHCR
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  image-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Build demo image
+        run: |
+          docker build --pull -t "ghcr.io/${{ github.repository }}:${{ github.sha }}" .
+      - name: Scan image (HIGH and CRITICAL)
+        id: trivy
+        continue-on-error: true
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:${{ github.sha }}
+          scan-type: image
+          format: json
+          output: trivy-report.json
+          severity: HIGH,CRITICAL
+          ignore-unfixed: false
+          exit-code: '1'
+      - name: Upload evidence even if vulnerabilities found
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: trivy-image-report
+          path: trivy-report.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Block publication if Trivy finds HIGH/CRITICAL or scan fails
+        if: steps.trivy.outcome != 'success'
+        run: |
+          echo "Trivy security gate failed: GHCR publication is blocked."
+          exit 1
+      - name: Log in to GHCR
+        if: github.event_name == 'push'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish image by immutable commit SHA
+        if: github.event_name == 'push'
+        run: docker push "ghcr.io/${{ github.repository }}:${{ github.sha }}"

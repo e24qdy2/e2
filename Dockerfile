@@ -1,4 +1,5 @@
-﻿FROM python:3.12-alpine
+FROM python:3.12-alpine
+RUN apk upgrade --no-cache
 ENV PORT=8080 PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY app/server.py /app/server.py

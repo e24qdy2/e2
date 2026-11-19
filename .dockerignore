@@ -1,0 +1,13 @@
+.git
+.github
+docs
+*.md
+__pycache__
+*.pyc
+.env
+.env.*
+*.json
+*.key
+*.pem
+kubeconfig*
+reports

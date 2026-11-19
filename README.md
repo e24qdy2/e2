@@ -1,28 +1,35 @@
-﻿# DevSecOps Personal GitHub Lab
+# DevSecOps e2 — Public Learning Repository
 
-Minimal Python HTTP app for learning GitHub Actions, SAST, DAST and container security. This repository contains no company cloud configuration or credentials.
+Small **independent demo application** for learning GitHub Actions, CodeQL, Semgrep, OWASP ZAP, container image security, and GHCR publication. Do not use this repository to store company GKE configuration, credentials, internal endpoints, billing data, or enterprise security evidence.
 
-## Step 1: Local test
+## Completed CI stages
+- **CI DevSecOps Starter**: syntax check, HTTP smoke tests, Semgrep SAST and OWASP ZAP baseline against the app running on **localhost inside GitHub Actions**.
+- **CodeQL Advanced**: analysis of Python and GitHub Actions.
+- **Container Build, Trivy Gate and GHCR**: builds Docker image, generates JSON CVE evidence, fails the pipeline on any HIGH/CRITICAL finding, and publishes the image to GHCR **only when the security gate passes**.
 
-```powershell
+## Actions step-by-step
+1. Open [Actions](https://github.com/e24qdy2/e2/actions).
+2. Check `CI DevSecOps Starter`, `CodeQL Advanced`, and `Container Build, Trivy Gate and GHCR`.
+3. For container security, download the **trivy-image-report** artifact and inspect findings.
+4. If HIGH/CRITICAL CVEs are reported, fix them in a Pull Request and wait for a green Trivy gate before releasing.
+5. If all checks pass on a push to `main`, verify the pushed image under GitHub **Packages**. Images are tagged with the Git commit SHA.
+
+## Local run
+```bash
 python -B app/server.py
 # In another terminal:
-curl.exe http://127.0.0.1:8080/healthz
+curl -i http://127.0.0.1:8080/healthz
 ```
 
-## Step 2: Connect your own private GitHub repository
-
-1. Create a **private** empty repository under your personal GitHub account.
-2. Authenticate your workstation using Git Credential Manager or the GitHub CLI.
-3. Configure origin and push:
-
-```powershell
-git remote add origin https://github.com/YOUR_GITHUB_USERNAME/devsecops-personal-github-lab.git
-git push -u origin main
+```bash
+docker build --pull -t e2-lab:local .
+docker run --rm -p 127.0.0.1:8080:8080 e2-lab:local
 ```
 
-Do not add organization-specific GKE project IDs, kubeconfig, credentials, outputs, or scans to this repository. Keep real cluster evidence offline.
+## Database DevOps
+Read `docs/database-devops.md` for Flyway and DBA-approval concepts. This is **documentation only**: no workflow creates or modifies a database.
 
-## Step 3: Verify
+## Separation and safety
+This demo **does not deploy to corporate GKE**. It uses a GitHub-hosted runner and local HTTP preview only. Never add kubeconfig, service account keys, production data, vulnerability reports from company systems, or internal identifiers to this public repository.
 
-Open GitHub -> Actions and inspect the workflow run for test/SAST/DAST. The database chapter in the playbook is documentation only; no DB operations are executed.
+This demonstration does not certify the application as production secure; the scanners have limited coverage and require review of their findings.
